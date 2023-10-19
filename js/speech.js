@@ -32,6 +32,7 @@ function Speech(texts, options) {
   function pickEngine() {
     if (isUseMyPhone(options.voice)) return phoneTtsEngine;
     if (isNvidiaRiva(options.voice)) return nvidiaRivaTtsEngine;
+    if (isCustomApi(options.voice)) return customTtsEngine;
     if (isGoogleTranslate(options.voice) && !/\s(Hebrew|Telugu)$/.test(options.voice.voiceName)) {
       return googleTranslateTtsEngine.ready()
         .then(function() {return googleTranslateTtsEngine})

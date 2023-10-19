@@ -1,6 +1,6 @@
 
 $(function() {
-  getSettings(["awsCreds", "gcpCreds", "ibmCreds", "rivaCreds"])
+  getSettings(["awsCreds", "gcpCreds", "ibmCreds", "rivaCreds", "customCreds"])
     .then(function(items) {
       if (items.awsCreds) {
         $("#aws-access-key-id").val(obfuscate(items.awsCreds.accessKeyId));
@@ -16,12 +16,16 @@ $(function() {
       if (items.rivaCreds) {
         $("#riva-url").val(obfuscate(items.rivaCreds.url));
       }
+      if (items.customCreds) {
+        $("#custom-api-endpoint").val(obfuscate(items.customCreds.url));
+      }
     })
   $(".status").hide();
   $("#aws-save-button").click(awsSave);
   $("#gcp-save-button").click(gcpSave);
   $("#ibm-save-button").click(ibmSave);
   $("#riva-save-button").click(rivaSave);
+  $("#custom-save-button").click(customSave);
 })
 
 function obfuscate(key) {
@@ -178,3 +182,44 @@ function testRiva(url) {
     return nvidiaRivaTtsEngine.fetchVoices(url);
   })
 }
+
+function customSave() {
+  $(".status").hide();
+  var url = $("#custom-api-endpoint").val().trim();
+  if (url) {
+    $("#custom-progress").show();
+    testCustom(url)
+      .then(function() {
+        $("#custom-progress").hide();
+        updateSettings({customCreds: {url: url}});
+        $("#custom-success").text("Custom API are enabled.").show();
+        $("#custom-api-endpoint").val(obfuscate(url));
+      },
+      function(err) {
+        $("#custom-progress").hide();
+        $("#custom-error").text("Test failed: " + err.message).show();
+      })
+  }
+  else if (!url) {
+    clearSettings(["customCreds"])
+      .then(function() {
+        $("#custom-success").text("Custom API are disabled.").show();
+      })
+  }
+  else {
+    $("#custom-error").text("Missing required fields.").show();
+  }
+}
+
+function testCustom(url) {
+  return requestPermissions({origins: [url + "/*"]})
+  .then(function(granted) {
+    if (!granted) throw new Error("Permission not granted");
+  })
+  .then(function() {
+    return [
+      {voiceName: "Custom API"},
+    ];
+  })
+}
+

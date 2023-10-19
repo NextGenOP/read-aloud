@@ -6,6 +6,7 @@ var amazonPollyTtsEngine = new AmazonPollyTtsEngine();
 var googleWavenetTtsEngine = new GoogleWavenetTtsEngine();
 var ibmWatsonTtsEngine = new IbmWatsonTtsEngine();
 var nvidiaRivaTtsEngine = new NvidiaRivaTtsEngine();
+var customTtsEngine = new CustomTtsEngine();
 var phoneTtsEngine = new PhoneTtsEngine();
 
 
@@ -1201,6 +1202,64 @@ function NvidiaRivaTtsEngine() {
   }
 }
 
+function CustomTtsEngine() {
+  var prefetchAudio;
+  var isSpeaking = false;
+  var audio;
+  this.speak = function(utterance, options, onEvent) {
+    const urlPromise = Promise.resolve()
+      .then(function() {
+        if (prefetchAudio && prefetchAudio[0] == utterance && prefetchAudio[1] == options) return prefetchAudio[2];
+        else return getAudioUrl(utterance, options.voice);
+      })
+    audio = playAudio(urlPromise, options)
+    audio.startPromise
+      .then(() => {
+        onEvent({type: "start", charIndex: 0})
+        isSpeaking = true;
+      })
+      .catch(function(err) {
+        onEvent({type: "error", error: err})
+      })
+    audio.endPromise
+      .then(() => onEvent({type: "end", charIndex: utterance.length}),
+        err => onEvent({type: "error", error: err}))
+      .finally(() => isSpeaking = false)
+  };
+  this.isSpeaking = function(callback) {
+    callback(isSpeaking);
+  };
+  this.pause =
+  this.stop = function() {
+    audio.pause()
+  };
+  this.resume = function() {
+    return audio.resume()
+  };
+  this.prefetch = function(utterance, options) {
+    getAudioUrl(utterance, options.voice)
+      .then(function(url) {
+        prefetchAudio = [utterance, options, url];
+      })
+      .catch(console.error)
+  };
+  this.setNextStartTime = function() {
+  };
+  this.getVoices = function() {
+    return [
+      {voiceName: "Custom API"},
+    ];
+  };
+  async function getAudioUrl(text, voice) {
+    assert(text && voice);
+    const settings = await getSettings(["customCreds"]);
+    const url = settings.customCreds.url.replace('%s', encodeURIComponent(text));
+    const res = await fetch(url);
+    if (!res.ok) throw new Error("Server returns " + res.status);
+    const blob = await res.blob();
+    return URL.createObjectURL(blob);
+  }
+}
 
 function PhoneTtsEngine() {
   var isSpeaking = false

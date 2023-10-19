@@ -133,6 +133,7 @@ function getVoices() {
         settings.gcpCreds ? googleWavenetTtsEngine.getVoices() : googleWavenetTtsEngine.getFreeVoices(),
         ibmWatsonTtsEngine.getVoices(),
         nvidiaRivaTtsEngine.getVoices(),
+        customTtsEngine.getVoices(),
         phoneTtsEngine.getVoices(),
       ])
     })
@@ -189,12 +190,15 @@ function isNvidiaRiva(voice) {
   return /^Nvidia-Riva /.test(voice.voiceName);
 }
 
+function isCustomApi(voice) {
+  return voice.voiceName === "Custom API";
+}
 function isUseMyPhone(voice) {
   return voice.isUseMyPhone == true
 }
 
 function isRemoteVoice(voice) {
-  return isAmazonCloud(voice) || isMicrosoftCloud(voice) || isReadAloudCloud(voice) || isGoogleTranslate(voice) || isGoogleWavenet(voice) || isAmazonPolly(voice) || isIbmWatson(voice) || isNvidiaRiva(voice);
+  return isAmazonCloud(voice) || isMicrosoftCloud(voice) || isReadAloudCloud(voice) || isGoogleTranslate(voice) || isGoogleWavenet(voice) || isAmazonPolly(voice) || isIbmWatson(voice) || isNvidiaRiva(voice) || isCustomApi(voice);
 }
 
 function isPremiumVoice(voice) {
